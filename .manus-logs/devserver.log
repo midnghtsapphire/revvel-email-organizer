@@ -1,0 +1,24 @@
+[2026-02-16T17:07:56.509Z] Starting dev server with command: pnpm run dev
+[2026-02-16T17:07:57.216Z] 
+[2026-02-16T17:07:57.216Z] > revvel-email-app@1.0.0 dev /home/ubuntu/revvel-email-app
+[2026-02-16T17:07:57.217Z] > vite --host
+[2026-02-16T17:07:57.217Z] 
+[2026-02-16T17:07:57.834Z] 
+[2026-02-16T17:07:57.835Z] VITE v7.1.9  ready in 580 ms
+[2026-02-16T17:07:57.835Z] 
+[2026-02-16T17:07:57.835Z] ➜  Local:   http://localhost:3000/
+[2026-02-16T17:07:57.836Z] ➜  Network: http://169.254.0.21:3000/
+[2026-02-16T17:12:05.080Z] 12:12:05 PM [vite] (client) page reload index.html
+[2026-02-16T17:21:45.284Z] [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[2026-02-16T17:21:47.579Z] 12:21:47 PM [vite] (client) ✨ new dependencies optimized: framer-motion
+[2026-02-16T17:21:47.580Z] 12:21:47 PM [vite] (client) ✨ optimized dependencies changed. reloading
+[2026-02-16T17:22:32.267Z] 12:22:32 PM [vite] vite.config.ts changed, restarting server...
+[2026-02-16T17:22:32.319Z] 12:22:32 PM [vite] server restarted.
+[2026-02-16T17:23:27.813Z] 12:23:27 PM [vite] vite.config.ts changed, restarting server...
+[2026-02-16T17:23:27.815Z] 12:23:27 PM [vite] (client) page reload index.html
+[2026-02-16T17:23:27.829Z] 12:23:27 PM [vite] server restarted.
+[2026-02-16T17:23:27.830Z] 
+[2026-02-16T17:23:27.831Z] ➜  Local:   http://localhost:5173/
+[2026-02-16T17:23:27.831Z] ➜  Network: http://169.254.0.21:5173/
+[2026-02-16T17:23:32.617Z] 12:23:32 PM [vite] (client) page reload 404.html
+[2026-02-16T17:23:32.621Z] 12:23:32 PM [vite] (client) page reload index.html
