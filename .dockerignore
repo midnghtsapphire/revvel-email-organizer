@@ -1,0 +1,13 @@
+node_modules
+dist
+client/dist
+.git
+.github
+.env
+.env.*
+*.md
+!README.md
+.manus-logs
+coverage
+.vscode
+.idea

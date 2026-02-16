@@ -1,0 +1,75 @@
+# ============================================================
+# Revvel Email Organizer — Docker Compose
+# Local development environment with MySQL
+# ============================================================
+# Usage:
+#   docker compose up -d          # Start all services
+#   docker compose logs -f app    # Follow app logs
+#   docker compose down           # Stop all services
+# ============================================================
+
+services:
+  # ─── MySQL Database ──────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: revvel-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: revvel_root_password
+      MYSQL_DATABASE: revvel
+      MYSQL_USER: revvel
+      MYSQL_PASSWORD: revvel_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Revvel App ──────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: revvel-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: mysql://revvel:revvel_password@db:3306/revvel
+      NODE_ENV: production
+      PORT: 3000
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Redis (optional, for session/cache) ─────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: revvel-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local

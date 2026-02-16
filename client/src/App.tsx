@@ -4,36 +4,47 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AccessibilityProvider } from "./contexts/AccessibilityContext";
 import Home from "./pages/Home";
-
+import CompassDashboard from "./pages/CompassDashboard";
+import Inbox from "./pages/Inbox";
+import Settings from "./pages/Settings";
+import Pricing from "./pages/Pricing";
+import FossCredits from "./pages/FossCredits";
 
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
+      <Route path="/" component={Home} />
+      <Route path="/compass" component={CompassDashboard} />
+      <Route path="/inbox" component={Inbox} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/foss-credits" component={FossCredits} />
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+      <ThemeProvider defaultTheme="dark">
+        <AccessibilityProvider>
+          <TooltipProvider>
+            <Toaster
+              toastOptions={{
+                style: {
+                  background: "oklch(0.2 0.012 55)",
+                  border: "1px solid oklch(0.28 0.015 55)",
+                  color: "oklch(0.88 0.025 75)",
+                },
+              }}
+            />
+            <Router />
+          </TooltipProvider>
+        </AccessibilityProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
