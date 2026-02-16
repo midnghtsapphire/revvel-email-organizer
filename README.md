@@ -74,15 +74,14 @@ pnpm install
 ### 2. Environment Setup
 
 ```bash
-# Copy the test environment template
-cp .env.test .env
+# Copy the example environment template
+cp .env.example .env
 
-# Edit .env with your values (see comments in file for guidance)
-# At minimum, set:
-#   DATABASE_URL
-#   JWT_SECRET
-#   OPENROUTER_API_KEY
+# Edit .env with your values
+# See SETUP.md for detailed instructions on obtaining API credentials
 ```
+
+**Important:** Never commit `.env` files with real credentials to version control. See [SETUP.md](./SETUP.md) for detailed credential configuration instructions.
 
 ### 3. Database Setup
 
@@ -125,6 +124,8 @@ docker compose logs -f app
 docker compose down
 ```
 
+**Security Note:** For production deployment, use GitHub Actions secrets or platform environment variables. Never commit real credentials to version control. See [SETUP.md](./SETUP.md) for production deployment instructions.
+
 ---
 
 ## Environment Variables
@@ -155,6 +156,8 @@ docker compose down
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
 | `STRIPE_PRICE_PRO` | Stripe Price ID for Pro plan ($15/mo) |
 | `STRIPE_PRICE_TEAM` | Stripe Price ID for Team plan ($25/mo) |
+
+**For detailed setup instructions and security best practices, see [SETUP.md](./SETUP.md).**
 
 ---
 

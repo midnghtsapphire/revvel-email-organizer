@@ -31,6 +31,13 @@ interface OpenRouterResponse {
   };
 }
 
+/**
+ * Check if OpenRouter is configured.
+ */
+export function isOpenRouterConfigured(): boolean {
+  return !!process.env.OPENROUTER_API_KEY;
+}
+
 export async function callOpenRouter(
   messages: OpenRouterMessage[],
   options: {
@@ -43,7 +50,12 @@ export async function callOpenRouter(
 ): Promise<{ content: string; model: string; usage?: OpenRouterResponse["usage"] }> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY is not configured. Set it in environment variables.");
+    // Return demo response when API key is not configured
+    console.warn("[OpenRouter] API key not configured. Returning demo response.");
+    return {
+      content: "[Demo Mode] AI features require an OpenRouter API key. Set OPENROUTER_API_KEY in your environment variables to enable real AI-powered features.",
+      model: "demo-mode",
+    };
   }
 
   const model = options.model || "anthropic/claude-sonnet-4";
@@ -99,6 +111,9 @@ export async function callOpenRouter(
  * Summarize an email using AI.
  */
 export async function summarizeEmail(emailContent: string): Promise<string> {
+  if (!isOpenRouterConfigured()) {
+    return "[Demo Mode] Email summary unavailable. Configure OPENROUTER_API_KEY to enable AI features.";
+  }
   const result = await callOpenRouter(
     [
       {
@@ -119,6 +134,9 @@ export async function summarizeEmail(emailContent: string): Promise<string> {
  * Extract commitments from email text.
  */
 export async function extractCommitments(emailContent: string): Promise<Array<{ text: string; dueDate?: string }>> {
+  if (!isOpenRouterConfigured()) {
+    return [];
+  }
   const result = await callOpenRouter(
     [
       {
@@ -147,6 +165,9 @@ export async function draftReply(
   emailContent: string,
   tone: "professional" | "casual" | "brief" = "professional"
 ): Promise<string> {
+  if (!isOpenRouterConfigured()) {
+    return "[Demo Mode] AI reply drafting unavailable. Configure OPENROUTER_API_KEY to enable this feature.";
+  }
   const result = await callOpenRouter(
     [
       {
@@ -171,6 +192,9 @@ export async function categorizeEmail(
   snippet: string,
   from: string
 ): Promise<{ category: string; priority: "high" | "medium" | "low"; sentiment: "positive" | "neutral" | "negative" }> {
+  if (!isOpenRouterConfigured()) {
+    return { category: "Work", priority: "medium", sentiment: "neutral" };
+  }
   const result = await callOpenRouter(
     [
       {
