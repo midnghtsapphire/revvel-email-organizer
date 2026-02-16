@@ -11,11 +11,13 @@ import Inbox from "./pages/Inbox";
 import Settings from "./pages/Settings";
 import Pricing from "./pages/Pricing";
 import FossCredits from "./pages/FossCredits";
+import Login from "./pages/Login";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
       <Route path="/compass" component={CompassDashboard} />
       <Route path="/inbox" component={Inbox} />
       <Route path="/settings" component={Settings} />

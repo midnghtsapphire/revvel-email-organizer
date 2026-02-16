@@ -1,4 +1,4 @@
-import { eq, desc, and, lte } from "drizzle-orm";
+import { eq, desc, and, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -9,6 +9,7 @@ import {
   contacts, InsertContact,
   aiAttribution, InsertAiAttribution,
   emailCategories,
+  passwordHashes,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -63,9 +64,6 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
     }
 
     if (!values.lastSignedIn) {
@@ -94,6 +92,32 @@ export async function getUserByOpenId(openId: string) {
 
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+// ─── Email Lookup (for standalone auth) ─────────────────────────
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// ─── Password Hash Storage ──────────────────────────────────────
+
+export async function setPasswordHash(openId: string, hash: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(passwordHashes).values({ openId, hash }).onDuplicateKeyUpdate({
+    set: { hash },
+  });
+}
+
+export async function getPasswordHash(openId: string): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(passwordHashes).where(eq(passwordHashes.openId, openId)).limit(1);
+  return result.length > 0 ? result[0].hash : null;
 }
 
 // ─── Gmail Accounts ─────────────────────────────────────────────
