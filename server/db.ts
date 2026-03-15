@@ -1,4 +1,4 @@
-import { eq, desc, and, lte, sql } from "drizzle-orm";
+import { eq, desc, and, lte, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -10,6 +10,8 @@ import {
   aiAttribution, InsertAiAttribution,
   emailCategories,
   passwordHashes,
+  syncedEmails, InsertSyncedEmail,
+  organizeJobs, InsertOrganizeJob,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -261,4 +263,151 @@ export async function getEmailCategories(userId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(emailCategories).where(eq(emailCategories.userId, userId));
+}
+
+// ─── Synced Emails ──────────────────────────────────────────────
+
+export async function upsertSyncedEmail(email: InsertSyncedEmail) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(syncedEmails).values(email).onDuplicateKeyUpdate({
+    set: {
+      subject: email.subject,
+      snippet: email.snippet,
+      labelIds: email.labelIds,
+      category: email.category,
+      priority: email.priority,
+      sentiment: email.sentiment,
+      isRead: email.isRead,
+      isStarred: email.isStarred,
+      isArchived: email.isArchived,
+      isTrashed: email.isTrashed,
+      hasUnsubscribe: email.hasUnsubscribe,
+      unsubscribeUrl: email.unsubscribeUrl,
+      syncedAt: new Date(),
+    },
+  });
+}
+
+export async function getSyncedEmails(
+  userId: number,
+  opts: {
+    gmailAccountId?: number;
+    category?: string;
+    isRead?: boolean;
+    isStarred?: boolean;
+    isArchived?: boolean;
+    limit?: number;
+    offset?: number;
+  } = {}
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(syncedEmails.userId, userId)];
+  if (opts.gmailAccountId !== undefined) conditions.push(eq(syncedEmails.gmailAccountId, opts.gmailAccountId));
+  if (opts.category !== undefined) conditions.push(eq(syncedEmails.category, opts.category));
+  if (opts.isRead !== undefined) conditions.push(eq(syncedEmails.isRead, opts.isRead));
+  if (opts.isStarred !== undefined) conditions.push(eq(syncedEmails.isStarred, opts.isStarred));
+  if (opts.isArchived !== undefined) conditions.push(eq(syncedEmails.isArchived, opts.isArchived));
+
+  const query = db.select().from(syncedEmails)
+    .where(and(...conditions))
+    .orderBy(desc(syncedEmails.receivedAt))
+    .limit(opts.limit ?? 50)
+    .offset(opts.offset ?? 0);
+
+  return query;
+}
+
+export async function countSyncedEmails(userId: number, opts: { isRead?: boolean; category?: string } = {}) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const conditions = [eq(syncedEmails.userId, userId)];
+  if (opts.isRead !== undefined) conditions.push(eq(syncedEmails.isRead, opts.isRead));
+  if (opts.category !== undefined) conditions.push(eq(syncedEmails.category, opts.category));
+
+  const result = await db.select({ count: sql<number>`count(*)` })
+    .from(syncedEmails)
+    .where(and(...conditions));
+
+  return Number(result[0]?.count ?? 0);
+}
+
+export async function markEmailRead(userId: number, messageId: string, isRead: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(syncedEmails)
+    .set({ isRead })
+    .where(and(eq(syncedEmails.userId, userId), eq(syncedEmails.messageId, messageId)));
+}
+
+export async function markEmailsRead(userId: number, messageIds: string[], isRead: boolean) {
+  const db = await getDb();
+  if (!db || messageIds.length === 0) return;
+  await db.update(syncedEmails)
+    .set({ isRead })
+    .where(and(eq(syncedEmails.userId, userId), inArray(syncedEmails.messageId, messageIds)));
+}
+
+export async function markEmailsArchived(userId: number, messageIds: string[]) {
+  const db = await getDb();
+  if (!db || messageIds.length === 0) return;
+  await db.update(syncedEmails)
+    .set({ isArchived: true })
+    .where(and(eq(syncedEmails.userId, userId), inArray(syncedEmails.messageId, messageIds)));
+}
+
+export async function markEmailsTrashed(userId: number, messageIds: string[]) {
+  const db = await getDb();
+  if (!db || messageIds.length === 0) return;
+  await db.update(syncedEmails)
+    .set({ isTrashed: true })
+    .where(and(eq(syncedEmails.userId, userId), inArray(syncedEmails.messageId, messageIds)));
+}
+
+export async function getLastSyncTime(userId: number, gmailAccountId: number): Promise<Date | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select({ syncedAt: syncedEmails.syncedAt })
+    .from(syncedEmails)
+    .where(and(eq(syncedEmails.userId, userId), eq(syncedEmails.gmailAccountId, gmailAccountId)))
+    .orderBy(desc(syncedEmails.syncedAt))
+    .limit(1);
+  return result[0]?.syncedAt ?? null;
+}
+
+// ─── Organize Jobs ──────────────────────────────────────────────
+
+export async function createOrganizeJob(job: InsertOrganizeJob) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(organizeJobs).values(job);
+  return result;
+}
+
+export async function getOrganizeJob(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(organizeJobs).where(eq(organizeJobs.id, id)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function updateOrganizeJob(
+  id: number,
+  update: Partial<Pick<InsertOrganizeJob, "status" | "processed" | "total" | "errorCount" | "categoryCounts" | "errorMessage" | "startedAt" | "completedAt">>
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(organizeJobs).set(update).where(eq(organizeJobs.id, id));
+}
+
+export async function listOrganizeJobs(userId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(organizeJobs)
+    .where(eq(organizeJobs.userId, userId))
+    .orderBy(desc(organizeJobs.createdAt))
+    .limit(limit);
 }

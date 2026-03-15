@@ -142,3 +142,75 @@ export const aiAttribution = mysqlTable("ai_attribution", {
 
 export type AiAttribution = typeof aiAttribution.$inferSelect;
 export type InsertAiAttribution = typeof aiAttribution.$inferInsert;
+
+/**
+ * Password hashes for email/password auth.
+ */
+export const passwordHashes = mysqlTable("password_hashes", {
+  id: int("id").autoincrement().primaryKey(),
+  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  hash: text("hash").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PasswordHash = typeof passwordHashes.$inferSelect;
+
+/**
+ * Cached email metadata synced from Gmail.
+ * Allows fast inbox display and search without hitting the Gmail API on every page load.
+ */
+export const syncedEmails = mysqlTable("synced_emails", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  gmailAccountId: int("gmailAccountId").notNull(),
+  messageId: varchar("messageId", { length: 255 }).notNull(),
+  threadId: varchar("threadId", { length: 255 }),
+  from: varchar("from", { length: 500 }),
+  fromName: varchar("fromName", { length: 255 }),
+  fromEmail: varchar("fromEmail", { length: 320 }),
+  to: text("to"),
+  subject: varchar("subject", { length: 1000 }),
+  snippet: text("snippet"),
+  labelIds: json("labelIds").$type<string[]>(),
+  category: varchar("category", { length: 50 }),
+  priority: mysqlEnum("priority", ["high", "medium", "low"]).default("medium"),
+  sentiment: mysqlEnum("sentiment", ["positive", "neutral", "negative"]).default("neutral"),
+  isRead: boolean("isRead").default(false).notNull(),
+  isStarred: boolean("isStarred").default(false).notNull(),
+  isArchived: boolean("isArchived").default(false).notNull(),
+  isTrashed: boolean("isTrashed").default(false).notNull(),
+  hasUnsubscribe: boolean("hasUnsubscribe").default(false),
+  unsubscribeUrl: text("unsubscribeUrl"),
+  internalDate: varchar("internalDate", { length: 20 }),
+  receivedAt: timestamp("receivedAt"),
+  syncedAt: timestamp("syncedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SyncedEmail = typeof syncedEmails.$inferSelect;
+export type InsertSyncedEmail = typeof syncedEmails.$inferInsert;
+
+/**
+ * Tracks background organize/sync jobs and their progress.
+ */
+export const organizeJobs = mysqlTable("organize_jobs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  gmailAccountId: int("gmailAccountId").notNull(),
+  status: mysqlEnum("status", ["queued", "running", "completed", "failed"]).default("queued").notNull(),
+  jobType: mysqlEnum("jobType", ["sync", "organize", "bulk_action"]).default("organize").notNull(),
+  processed: int("processed").default(0).notNull(),
+  total: int("total").default(0).notNull(),
+  errorCount: int("errorCount").default(0).notNull(),
+  categoryCounts: json("categoryCounts").$type<Record<string, number>>(),
+  options: json("options"),
+  errorMessage: text("errorMessage"),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OrganizeJob = typeof organizeJobs.$inferSelect;
+export type InsertOrganizeJob = typeof organizeJobs.$inferInsert;

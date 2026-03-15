@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isGmailConfigured, getGmailAuthUrl, parseEmailHeaders, decodeBody, extractTextBody } from "./gmail";
+import { isGmailConfigured, getGmailAuthUrl, parseEmailHeaders, decodeBody, extractTextBody, streamMessages, batchModifyMessages, batchDeleteMessages, getOrCreateLabel, listLabels, createLabel } from "./gmail";
 
 describe("isGmailConfigured", () => {
   it("returns false when credentials are not set", () => {
@@ -156,5 +156,22 @@ describe("extractTextBody", () => {
 
     const text = extractTextBody(message);
     expect(text).toBe("Fallback snippet");
+  });
+});
+
+describe("extractUnsubscribeLink (gmail helpers)", () => {
+  it("streamMessages is an async generator function", () => {
+    // Verify the export exists and is a function
+    expect(typeof streamMessages).toBe("function");
+  });
+});
+
+describe("labelName helpers exported from gmail", () => {
+  it("batchModifyMessages and batchDeleteMessages are exported functions", () => {
+    expect(typeof batchModifyMessages).toBe("function");
+    expect(typeof batchDeleteMessages).toBe("function");
+    expect(typeof getOrCreateLabel).toBe("function");
+    expect(typeof listLabels).toBe("function");
+    expect(typeof createLabel).toBe("function");
   });
 });

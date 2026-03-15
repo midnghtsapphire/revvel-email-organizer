@@ -23,16 +23,17 @@ import { callOpenRouter, summarizeEmail, extractCommitments, categorizeEmail, dr
 const mockedAxios = vi.mocked(axios);
 
 describe("callOpenRouter", () => {
-  it("throws when OPENROUTER_API_KEY is not set", async () => {
+  it("returns demo response when OPENROUTER_API_KEY is not set", async () => {
     const originalKey = process.env.OPENROUTER_API_KEY;
     delete process.env.OPENROUTER_API_KEY;
 
-    await expect(
-      callOpenRouter(
-        [{ role: "user", content: "test" }],
-        { component: "test", action: "test" }
-      )
-    ).rejects.toThrow("OPENROUTER_API_KEY is not configured");
+    const result = await callOpenRouter(
+      [{ role: "user", content: "test" }],
+      { component: "test", action: "test" }
+    );
+
+    expect(result.model).toBe("demo-mode");
+    expect(result.content).toContain("Demo Mode");
 
     if (originalKey) process.env.OPENROUTER_API_KEY = originalKey;
   });
