@@ -248,3 +248,144 @@ export function extractTextBody(message: GmailMessage): string {
   }
   return message.snippet || "";
 }
+
+// ─── Label Management ───────────────────────────────────────────────────────
+
+export interface GmailLabel {
+  id: string;
+  name: string;
+  type: "system" | "user";
+  messagesTotal?: number;
+  messagesUnread?: number;
+  threadsTotal?: number;
+  threadsUnread?: number;
+}
+
+/**
+ * List all Gmail labels for the authenticated user.
+ */
+export async function listLabels(accessToken: string): Promise<GmailLabel[]> {
+  const response = await axios.get(`${GMAIL_API_URL}/users/me/labels`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return (response.data as { labels: GmailLabel[] }).labels || [];
+}
+
+/**
+ * Get a single label by ID.
+ */
+export async function getLabel(accessToken: string, labelId: string): Promise<GmailLabel> {
+  const response = await axios.get(`${GMAIL_API_URL}/users/me/labels/${labelId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return response.data as GmailLabel;
+}
+
+/**
+ * Create a new Gmail label.
+ */
+export async function createLabel(
+  accessToken: string,
+  name: string,
+  options: { textColor?: string; backgroundColor?: string } = {}
+): Promise<GmailLabel> {
+  const body: Record<string, unknown> = { name };
+  if (options.textColor || options.backgroundColor) {
+    body.color = {
+      textColor: options.textColor || "#ffffff",
+      backgroundColor: options.backgroundColor || "#434343",
+    };
+  }
+  const response = await axios.post(`${GMAIL_API_URL}/users/me/labels`, body, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return response.data as GmailLabel;
+}
+
+/**
+ * Find a label by name, creating it if it does not exist.
+ * Supports nested labels using "/" separator (e.g. "Revvel/Work").
+ */
+export async function getOrCreateLabel(
+  accessToken: string,
+  name: string,
+  colorOptions?: { textColor?: string; backgroundColor?: string }
+): Promise<GmailLabel> {
+  const labels = await listLabels(accessToken);
+  const existing = labels.find(l => l.name.toLowerCase() === name.toLowerCase());
+  if (existing) return existing;
+  return createLabel(accessToken, name, colorOptions);
+}
+
+/**
+ * Batch-modify up to 1 000 messages in a single API call.
+ * Adds and/or removes label IDs from all matching message IDs.
+ */
+export async function batchModifyMessages(
+  accessToken: string,
+  messageIds: string[],
+  addLabelIds: string[] = [],
+  removeLabelIds: string[] = []
+): Promise<void> {
+  if (messageIds.length === 0) return;
+  // Gmail API allows a maximum of 1 000 ids per batchModify request
+  const CHUNK = 1000;
+  for (let i = 0; i < messageIds.length; i += CHUNK) {
+    const chunk = messageIds.slice(i, i + CHUNK);
+    await axios.post(
+      `${GMAIL_API_URL}/users/me/messages/batchModify`,
+      { ids: chunk, addLabelIds, removeLabelIds },
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+  }
+}
+
+/**
+ * Batch-delete (permanently) up to 1 000 messages in a single API call.
+ */
+export async function batchDeleteMessages(
+  accessToken: string,
+  messageIds: string[]
+): Promise<void> {
+  if (messageIds.length === 0) return;
+  const CHUNK = 1000;
+  for (let i = 0; i < messageIds.length; i += CHUNK) {
+    const chunk = messageIds.slice(i, i + CHUNK);
+    await axios.post(
+      `${GMAIL_API_URL}/users/me/messages/batchDelete`,
+      { ids: chunk },
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+  }
+}
+
+/**
+ * List messages with full metadata in one go, using pagination.
+ * Yields pages of message IDs rather than fetching all at once,
+ * so callers can process large mailboxes incrementally.
+ */
+export async function* streamMessages(
+  accessToken: string,
+  options: { q?: string; labelIds?: string[]; maxResults?: number } = {}
+): AsyncGenerator<Array<{ id: string; threadId: string }>> {
+  let pageToken: string | undefined;
+  let fetched = 0;
+  const limit = options.maxResults;
+  const pageSize = limit !== undefined ? Math.min(500, limit) : 500;
+
+  do {
+    const data = await listMessages(accessToken, {
+      maxResults: pageSize,
+      q: options.q,
+      pageToken,
+      labelIds: options.labelIds,
+    });
+    const page = data.messages || [];
+    if (page.length === 0) break;
+    yield page;
+    fetched += page.length;
+    pageToken = data.nextPageToken;
+    // Stop if we've reached the caller's requested limit
+    if (limit !== undefined && fetched >= limit) break;
+  } while (pageToken);
+}
