@@ -268,3 +268,12 @@ MIT License — see [LICENSE](./LICENSE) for details.
 ---
 
 *Built with care by the Revvel team. Designed for neurodivergent minds, loved by everyone.*
+
+---
+
+## Test
+
+| Feature | Status |
+|---------|--------|
+| Feature | ✅ Ready |
+
