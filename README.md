@@ -1,5 +1,12 @@
 # Revvel Email Organizer
 
+
+<!-- AUTO-PACKAGE-BADGES:START -->
+<!-- Auto-generated package badges -->
+
+![npm version](https://img.shields.io/npm/v/revvel-email-organizer?style=flat-square&logo=npm&color=blue) ![npm downloads](https://img.shields.io/npm/dw/revvel-email-organizer?style=flat-square&color=brightgreen) ![npm license](https://img.shields.io/npm/l/revvel-email-organizer?style=flat-square) [![Deployed](https://img.shields.io/badge/deployed-1.0.0-blue?style=flat-square)](https://www.npmjs.com/package/revvel-email-organizer)
+
+<!-- AUTO-PACKAGE-BADGES:END -->
 **The neurodivergent-first email organizer that transforms inbox chaos into calm, focused productivity.**
 
 Revvel introduces the **Compass Dashboard** — a revolutionary approach to email management featuring Inbox Weather, Relational Sonar, Commitment Tracker, Energy Matching, and Decision Fatigue Guard.
